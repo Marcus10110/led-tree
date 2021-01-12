@@ -24,10 +24,10 @@ const defaultTree = {
 
 type LedFn = (data: TreeData, time: Date) => Color[];
 
-const clamp = (n: number) => {
-  n = Math.round(n);
-  if (n > 255) n = 255;
-  if (n < 0) n = 0;
+const clamp = (n: number, start: number = 0, end: number = 255) => {
+  if (start === 0 && end === 255) n = Math.round(n);
+  if (n > end) n = end;
+  if (n < start) n = start;
   return n;
 };
 
@@ -102,7 +102,7 @@ const drawStarsGen = (ledCount: number): LedFn => {
   }
 
   return (data, time) => {
-    const result: { r: number; g: number; b: number }[] = [];
+    const result: Color[] = [];
 
     for (let i = 0; i < data.ledCount; ++i) {
       const star = stars[i](time);
@@ -110,6 +110,52 @@ const drawStarsGen = (ledCount: number): LedFn => {
     }
     return result;
   };
+};
+
+const interpolate = (start: number, end: number, pos: number): number => {
+  pos = clamp(pos, 0, 1);
+  return (end - start) * pos + start;
+};
+
+const getPos = (start: number, end: number, current: number): number => {
+  if (start > end) {
+    return clamp((current - end) / (start - end), 0, 1);
+  }
+  const pos = clamp((current - start) / (end - start), 0, 1);
+  //console.log(start, end, current, pos);
+  return pos;
+};
+
+const interpolateColor = (start: Color, end: Color, pos: number): Color => {
+  return {
+    r: interpolate(start.r, end.r, pos),
+    g: interpolate(start.g, end.g, pos),
+    b: interpolate(start.b, end.b, pos),
+  };
+  /*
+  HSV interpolation
+  const [h1, s1, v1] = rgb.hsv([start.r, start.g, start.b]);
+  const [h2, s2, v2] = rgb.hsv([end.r, end.g, end.b]);
+  const h = interpolate(h1, h2, pos);
+  const s = interpolate(s1, s2, pos);
+  const v = interpolate(v1, v2, pos);
+  const [r, g, b] = hsv.rgb([h, s, v]);
+  return { r, g, b };
+  */
+};
+
+const drawBlueSky: LedFn = (data, time) => {
+  const result: Color[] = [];
+  const topY = Math.min(...data.ledPositions.map(x => x.y));
+  const bottomY = Math.max(...data.ledPositions.map(x => x.y));
+  const topColor: Color = { r: 0, g: 120, b: 255 };
+  const bottomColor: Color = { r: 194, g: 247, b: 255 };
+
+  for (let i = 0; i < data.ledCount; ++i) {
+    const height = getPos(bottomY, topY, data.ledPositions[i].y); // 0 to 1
+    result.push(interpolateColor(bottomColor, topColor, height));
+  }
+  return result;
 };
 
 const computeLocations = (
@@ -178,6 +224,7 @@ function App() {
     if (canvasRef.current) {
       const computedTree = computeLocations(defaultTree);
       const fn = drawStarsGen(defaultTree.ledCount);
+      //const fn = drawBlueSky;
       const canvas = canvasRef.current;
       const context = canvas.getContext('2d');
       if (!context) throw Error('failed to get context');
