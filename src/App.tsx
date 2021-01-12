@@ -1,5 +1,6 @@
 import React from 'react';
 import './App.css';
+import { rgb, hsv} from 'color-convert'
 
 const pxPerFoot = 250;
 
@@ -57,6 +58,15 @@ const flicker = (frequency: number, depth: number, timeSec: number) => {
   return (Math.cos(2 * Math.PI * frequency * timeSec)/2+.5)*depth + (1-depth)
 }
 
+// brightness 0 to 1
+const colorAdjustBrightness = ({r, g, b}: Color, brightness: number): Color => {
+  let [h, s, v] = rgb.hsv([r, g, b]);
+  v *= brightness;
+  const [r1, g1, b1] = hsv.rgb([h,s,v]);
+
+  return {r: r1, g: g1, b: b1};
+}
+
 // units in seconds. returns [0, 1]
 const envelope = (period: number, duration: number, startOffset: number, timeSec: number) => {
   timeSec = (timeSec - startOffset) % period
@@ -64,21 +74,31 @@ const envelope = (period: number, duration: number, startOffset: number, timeSec
     return 0;
   }
   return Math.cos(2 * Math.PI / duration * (timeSec - (duration/2)))/2+.5;
-
 }
 
 const drawStarsGen = (ledCount: number): LedFn => {
-  const stars: ((time: Date) => number)[] = [];
+  const starColors: Color[] = [
+    { r: 155, g: 176, b: 255},
+    { r: 170, g: 191, b: 255},
+    { r: 202, g: 216, b: 255},
+    { r: 248, g: 247, b: 255},
+    { r: 254, g: 244, b: 234},
+    { r: 254, g: 210, b: 163},
+    { r: 255, g: 203, b: 117},
+  ]
+  const stars: ((time: Date) => Color)[] = [];
   for(let i = 0; i < ledCount; ++i) {
     const period = rangeRandom(10, 400);
     const duration = rangeRandom(period/5, period*.9);
     const offset = rangeRandom(0, period);
-    const maxBrightness = rangeRandom(10,255);
+    const maxBrightness = rangeRandom(.15,1);
     const flickerF = rangeRandom(0.05, .9);
     const flickerDepth = rangeRandom(0.05, 0.4);
+    const color = starColors[Math.round(rangeRandom(0, starColors.length-1))];
     stars.push((time: Date) => {
       const timeSec = time.getTime()/1000;
-      return envelope(period,duration,offset, timeSec)*maxBrightness * flicker(flickerF, flickerDepth, timeSec);
+      const brightness = envelope(period,duration,offset, timeSec)*maxBrightness * flicker(flickerF, flickerDepth, timeSec);
+      return colorAdjustBrightness(color, brightness)
     })
   }
 
@@ -87,8 +107,8 @@ const drawStarsGen = (ledCount: number): LedFn => {
     
     for(let i = 0; i < data.ledCount; ++i)
     {
-      const star = clamp(stars[i](time));
-      result.push({r: star, g: star, b: star});
+      const star = stars[i](time);
+      result.push(star);
     }
     return result;
   }
