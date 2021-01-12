@@ -1,0 +1,16 @@
+{
+  "semi": true,
+  "trailingComma": "all",
+  "singleQuote": true,
+  "printWidth": 120,
+  "endOfLine": "auto",
+  "arrowParens": "avoid",
+  "overrides": [
+    {
+      "files": ["*.css"],
+      "options": {
+        "printWidth": 200
+      }
+    }
+  ]
+}
