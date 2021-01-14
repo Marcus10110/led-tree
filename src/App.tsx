@@ -7,6 +7,12 @@ const pxPerFoot = 250;
 type Color = { r: number; g: number; b: number };
 type Position = { x: number; y: number };
 
+// this type is synced with the server.
+interface Message {
+  type: 'SetLeds';
+  colors: Color[];
+}
+
 interface TreeData {
   ledCount: number;
   ledLengthPx: number;
@@ -16,7 +22,7 @@ interface TreeData {
 }
 
 const defaultTree = {
-  ledCount: 50,
+  ledCount: 10,
   ledLengthPx: 11.5 * pxPerFoot,
   treeHeightPx: (20 / 12) * pxPerFoot,
   treeBasePx: (14 / 12) * pxPerFoot,
@@ -222,6 +228,7 @@ function App() {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
   React.useEffect(() => {
     if (canvasRef.current) {
+      const sendColors = connect();
       const computedTree = computeLocations(defaultTree);
       const fn = drawStarsGen(defaultTree.ledCount);
       //const fn = drawBlueSky;
@@ -232,7 +239,8 @@ function App() {
 
       const id = setInterval(() => {
         drawTree(computedTree, fn, context);
-      }, 66);
+        sendColors(fn(computedTree, new Date()));
+      }, 33);
       return () => {
         clearInterval(id);
       };
@@ -247,3 +255,14 @@ function App() {
 }
 
 export default App;
+
+const connect = () => {
+  const ws = new WebSocket('ws://localhost:8080');
+  return (colors: Color[]) => {
+    const message: Message = {
+      type: 'SetLeds',
+      colors,
+    };
+    return ws.send(JSON.stringify(message));
+  };
+};
