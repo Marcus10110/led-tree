@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <functional>
+
 namespace Animation
 {
     using SetLedFn = std::function<void( int, uint8_t, uint8_t, uint8_t )>;

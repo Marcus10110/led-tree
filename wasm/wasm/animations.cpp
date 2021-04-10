@@ -1,7 +1,7 @@
 #include "animations.h"
 #include <array>
-#include <stdlib.h>
 #include <limits>
+#include <stdlib.h>
 namespace Animation
 {
     Animation::Animation() = default;
@@ -26,12 +26,11 @@ namespace Animation
 
         std::tuple<uint8_t, uint8_t, uint8_t> HsvToRgb( uint16_t h16, uint8_t s8, uint8_t v8 )
         {
-            const float h = h16 / 65535.;
+            const float h = h16 / 65535. * 360.;
             const float s = s8 / 255.;
             const float v = v8 / 255.;
 
             float r = 0, g = 0, b = 0;
-
 
             float hh, p, q, t, ff;
             long i;
@@ -175,23 +174,24 @@ namespace Animation
                 }
             } );
 
-
         FnAnimation CircleRainbowAnimation =
             FnAnimation( []( SetLedFn& set_led, GetLedFn& get_led, const AnimationSettings& settings, uint32_t ms ) {
-                float start = ( ( ( ms % 5000 ) / 5000. ) + ( settings.mIndex / 4.0 ) ) * 65535.0;
-                const float step = ( ( 256.0 / settings.mCount ) / 4.0 );
+                float start = ( ( ( ms % 5000 ) / 5000. ) + ( settings.mIndex / 4.0 ) ) * std::numeric_limits<uint16_t>::max();
+                const float step =
+                    ( static_cast<float>( std::numeric_limits<uint16_t>::max() ) / static_cast<float>( settings.mCount ) ) / 4.0;
                 for( int i = 0; i < settings.mCount; ++i )
                 {
                     start += step;
-                    while( start > 255 )
+
+                    while( start > std::numeric_limits<uint16_t>::max() )
                     {
-                        start = start - 255;
+                        start = start - std::numeric_limits<uint16_t>::max();
                     }
+
                     auto rgb = HsvToRgb( static_cast<uint16_t>( start ), 255, 255 );
                     set_led( i, std::get<0>( rgb ), std::get<1>( rgb ), std::get<2>( rgb ) );
                 }
             } );
-
 
         FnAnimation SparkleAnimation =
             FnAnimation( []( SetLedFn& set_led, GetLedFn& get_led, const AnimationSettings& settings, uint32_t ms ) {
@@ -249,7 +249,7 @@ namespace Animation
             } );
 
         std::array<Animation*, 4> AllAnimations = { &WhiteAnimation, &StripIdAnimation, &CircleRainbowAnimation, &SparkleAnimation };
-    }
+    } // namespace
 
     int AnimationCount()
     {
@@ -259,4 +259,4 @@ namespace Animation
     {
         return AllAnimations.at( animation_index );
     }
-}
+} // namespace Animation
