@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js"
+      integrity="sha512-c3Nl8+7g4LMSTdrm621y7kf9v3SDPnhxLNhcjFJbKECVnmZHTdo+IRO05sNLTH/D3vA6u1X32ehoLC7WFVdheg=="
+      crossorigin="anonymous"
+    ></script>
+    <style>
+      .led {
+        width: 10px;
+        height: 10px;
+        border-radius: 100%;
+        background-color: black;
+        position: absolute;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>LED Simulator</h1>
+    <ul id="animationButtons"></ul>
+    <div id="ledArea" style="width: 1024px; height: 768px; background-color: lightblue; position: relative"></div>
+    <script src="led.js"></script>
+    <script type="text/javascript" src="src.js"></script>
+  </body>
+</html>
