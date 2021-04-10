@@ -1,0 +1,4 @@
+node_modules/
+dist/
+strips.csv
+strips.js
